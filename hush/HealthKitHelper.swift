@@ -100,8 +100,7 @@ class HearingHealthManager {
             let dayName = calendar.shortWeekdaySymbols[calendar.component(.weekday, from: day) - 1]
 
             let dose = totalDosePercent(samples: daySamples)
-            let avgDb = averageDB(samples: daySamples)
-            result.append(DailyDose(day: dayName, value: dose))
+            result.append(DailyDose(date: day, day: dayName, value: dose))
         }
 
         print("[HK] Final dailyData count: \(result.count)")
@@ -111,7 +110,6 @@ class HearingHealthManager {
 
 // NIOSH Formula Helpers
 
-/// every +3 dB เวลา limit ลดครึ่ง, baseline = 85 dB / 8 hr
 func allowedHours(dB: Double) -> Double {
     return 8.0 / pow(2.0, (dB - 85.0) / 3.0)
 }

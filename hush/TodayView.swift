@@ -1,21 +1,44 @@
 import SwiftUI
+import SwiftData
 import HealthKit
 
 struct TodayView: View {
     @State private var hk = HearingHealthManager()
+    @Query private var manualSessions: [ManualSession]
 
-    private var dosePercent: Double { min(hk.totalDose, 100) }
-    private var headroom: Double { max(0, 100 - hk.totalDose) }
+    private var todayManualSessions: [ManualSession] {
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        return manualSessions.filter { $0.startTime >= startOfDay }
+    }
+
+    private var unifiedSessions: [UnifiedSession] {
+        let hkSessions = hk.sessions.map { UnifiedSession(from: $0) }
+        let manualUnified = todayManualSessions.map { UnifiedSession(from: $0) }
+        return (hkSessions + manualUnified).sorted { $0.startDate < $1.startDate }
+    }
+
+    private var totalDose: Double {
+        unifiedSessions.reduce(0) { $0 + $1.dosePercent }
+    }
+
+    private var avgDB: Double {
+        guard !unifiedSessions.isEmpty else { return 0 }
+        return unifiedSessions.map(\.dB).reduce(0, +) / Double(unifiedSessions.count)
+    }
+
+    private var dosePercent: Double { min(totalDose, 100) }
+    private var headroom: Double { max(0, 100 - totalDose) }
     private var ringProgress: CGFloat { CGFloat(dosePercent / 100) }
 
     private var listenedHours: Double {
-        hk.sessions.reduce(0) { $0 + $1.endDate.timeIntervalSince($1.startDate) } / 3600
+        unifiedSessions.reduce(0) { $0 + $1.durationSeconds } / 3600
     }
 
     private var safeUntilText: String {
-        guard hk.avgDB > 0 else { return "—" }
-        let date = safeUntil(currentDose: hk.totalDose, avgDB: hk.avgDB)
+        guard avgDB > 0 else { return "—" }
+        let date = safeUntil(currentDose: totalDose, avgDB: avgDB)
         let formatter = DateFormatter()
+        formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "h a"
         return formatter.string(from: date)
     }
@@ -46,12 +69,12 @@ struct TodayView: View {
                                 .font(.system(size: 100))
                         }
 
-                        Text("\(Int(dosePercent))%")
+                        Text(String(format: "%.1f%%", totalDose))
                             .font(.system(size: 40, weight: .bold))
                             .foregroundStyle(ringColor)
                             .contentTransition(.numericText())
 
-                        if hk.totalDose >= 100 {
+                        if totalDose >= 100 {
                             Text("⚠️ daily limit reached")
                                 .font(.caption).foregroundColor(.red)
                         } else {
@@ -75,7 +98,7 @@ struct TodayView: View {
                     )
                     StatBox(
                         label: "avg dB",
-                        value: hk.avgDB > 0 ? "\(Int(hk.avgDB)) dB" : "—",
+                        value: avgDB > 0 ? "\(Int(avgDB)) dB" : "—",
                         valueColor: .mint
                     )
                     StatBox(
@@ -85,19 +108,28 @@ struct TodayView: View {
                     )
                 }
 
-                Text("sessions").font(.headline)
+                Text("Sessions").font(.headline)
 
-                if hk.sessions.isEmpty {
+                if unifiedSessions.isEmpty {
                     Text("No headphone sessions today")
                         .font(.caption)
                         .foregroundColor(.gray)
                         .padding(.vertical, 8)
                 } else {
-                    ForEach(hk.sessions, id: \.uuid) { session in
+                    ForEach(unifiedSessions) { session in
                         SessionRow(
-                            title: session.sourceRevision.source.name,
+                            title: session.source,
                             sub: sessionSubtitle(session),
-                            percent: String(format: "%.0f%%", sessionDosePercent(session))
+                            percent: String(format: "%.1f%%", session.dosePercent)
+                        )
+                        .overlay(
+                            session.isManual ?
+                                Image(systemName: "pencil.circle.fill")
+                                    .foregroundColor(.mint)
+                                    .font(.caption)
+                                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
+                                    .padding(8)
+                                : nil
                         )
                     }
                 }
@@ -110,18 +142,12 @@ struct TodayView: View {
         }
     }
 
-    private func sessionSubtitle(_ sample: HKQuantitySample) -> String {
+    private func sessionSubtitle(_ session: UnifiedSession) -> String {
         let fmt = DateFormatter()
         fmt.dateFormat = "h:mm"
-        let start = fmt.string(from: sample.startDate)
-        let end = fmt.string(from: sample.endDate)
-        let dB = sample.quantity.doubleValue(for: HKUnit.decibelAWeightedSoundPressureLevel())
-        return "\(start)-\(end) • \(Int(dB)) dB"
-    }
-
-    private func sessionDosePercent(_ sample: HKQuantitySample) -> Double {
-        let dB = sample.quantity.doubleValue(for: HKUnit.decibelAWeightedSoundPressureLevel())
-        let duration = sample.endDate.timeIntervalSince(sample.startDate)
-        return sampleDosePercent(dB: dB, durationSeconds: duration)
+        let start = fmt.string(from: session.startDate)
+        let end = fmt.string(from: session.endDate)
+        let activityText = session.activity != nil ? " • \(session.activity!)" : ""
+        return "\(start)-\(end) • \(Int(session.dB)) dB\(activityText)"
     }
 }

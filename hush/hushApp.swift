@@ -5,7 +5,7 @@ import SwiftData
 struct hushApp: App {
     var sharedModelContainer: ModelContainer = {
         let schema = Schema([
-            Item.self,
+            ManualSession.self,
         ])
         let modelConfiguration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: false)
 
@@ -16,9 +16,15 @@ struct hushApp: App {
         }
     }()
 
+    @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+
     var body: some Scene {
         WindowGroup {
-            MainTabView()
+            if hasCompletedOnboarding {
+                MainTabView()
+            } else {
+                OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+            }
         }
         .modelContainer(sharedModelContainer)
     }

@@ -15,17 +15,32 @@ struct InputField: View {
 }
 
 struct InsightRow: View {
-    var color: Color
-    var text: String
+    let color: Color
+    let title: String
+    let subtitle: String
+
     var body: some View {
-        HStack {
-            Circle().fill(color).frame(width: 8, height: 8)
-            Text(text)
-            Spacer()
+        VStack(alignment: .leading, spacing: 0) {
+            HStack(alignment: .center, spacing: 12) {
+                Circle()
+                    .fill(color)
+                    .frame(width: 10, height: 10)
+
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(title)
+                        .font(.body)
+                        .fontWeight(.bold)
+                        .foregroundColor(.white)
+                    Text(subtitle)
+                        .font(.subheadline)
+                        .foregroundColor(.gray)
+                }
+            }
+            .padding(.vertical, 14)
+
+            Divider()
+                .background(Color.gray.opacity(0.3))
         }
-        .padding()
-        .background(Color.white.opacity(0.05))
-        .cornerRadius(10)
     }
 }
 
@@ -61,7 +76,7 @@ struct CapsuleButton: View {
             .padding(.horizontal, 20)
             .padding(.vertical, 10)
             .frame(maxWidth: .infinity)
-            .background(isSelected ? Color.white : Color.white.opacity(0.1))
+            .background(isSelected ? Color.mint : Color.white.opacity(0.1))
             .foregroundColor(isSelected ? .black : .white)
             .cornerRadius(20)
     }
