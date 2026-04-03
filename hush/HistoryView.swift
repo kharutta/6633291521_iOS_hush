@@ -106,6 +106,11 @@ struct HistoryView: View {
     private var insights: [InsightData] {
         [weekdayWeekendInsight, trendInsight, volumeInsight].compactMap { $0 }
     }
+    
+    private var maxDB: Double {
+        let maxValue = dailyData.map(\.avgDB).max() ?? 85
+        return max(maxValue, 90)
+    }
 
     var body: some View {
         ScrollView {
@@ -124,24 +129,34 @@ struct HistoryView: View {
                         Chart {
                             ForEach(dailyData) { item in
                                 BarMark(
-                                    x: .value("Day", item.day),
-                                    y: .value("Dose", item.value),
-                                    width: .fixed(40)
+                                    x: .value("Day", item.date, unit: .day),
+                                    y: .value("Decibels", item.avgDB),
+                                    width: .fixed(35)
                                 )
                                 .foregroundStyle(item.color)
                                 .cornerRadius(4)
+                                .annotation(position: .top, spacing: 8) {
+                                    if item.avgDB > 0 {
+                                        Text(String(format: "%.0f", item.avgDB))
+                                            .font(.system(size: 10, weight: .bold))
+                                            .foregroundStyle(.gray)
+                                    }
+                                }
                             }
-                            RuleMark(y: .value("Limit", 100))
+                            
+                            RuleMark(y: .value("Limit", 85))
                                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
                                 .foregroundStyle(.red.opacity(0.5))
                         }
-                        .frame(height: 120)
+                        .frame(height: 160)
+                        .padding(.top, 24)
+                        .chartYScale(domain: 0...max(100, maxDB + 10))
                         .chartYAxis(.hidden)
                         .chartXAxis {
-                            AxisMarks { _ in
-                                AxisValueLabel()
+                            AxisMarks(values: .stride(by: .day)) { _ in
+                                AxisValueLabel(format: .dateTime.weekday(.abbreviated))
+                                    .font(.system(size: 12))
                                     .foregroundStyle(.gray)
-                                    .font(.caption2)
                             }
                         }
                     }
@@ -153,13 +168,13 @@ struct HistoryView: View {
                 HStack {
                     StatBox(
                         label: "weekly avg",
-                        value: dailyData.isEmpty ? "—" : (String(format: "%.1f%%", Int(weeklyAvg))),
+                        value: dailyData.isEmpty ? "—" : "\(String(format: "%.1f%", weeklyAvg))%",
                         valueColor: weeklyAvg > 60 ? .red : weeklyAvg > 40 ? .orange : .mint
                     )
                     if let worst = worstDay {
                         StatBox(
                             label: "worst day",
-                            value: "\(worst.day) \(Int(worst.value))%",
+                            value: "\(worst.day) \(String(format: "%.1f%", worst.value))%",
                             valueColor: .red
                         )
                     } else {
@@ -186,11 +201,10 @@ struct HistoryView: View {
         do {
             let calendar = Calendar.current
             let today = Date()
-            
             let startOfThisWeek = calendar.dateInterval(of: .weekOfYear, for: today)!.start
             let startOfLastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: startOfThisWeek)!
-
             let daysSinceLastWeekStart = calendar.dateComponents([.day], from: startOfLastWeek, to: today).day! + 1
+            
             let hkDailyData = try await hk.fetchDailyAverages(pastDays: daysSinceLastWeekStart)
 
             var manualByDay: [Date: [ManualSession]] = [:]
@@ -200,23 +214,35 @@ struct HistoryView: View {
                 manualByDay[day, default: []].append(session)
             }
 
-            var combinedData = hkDailyData
-            for i in 0..<combinedData.count {
-                let targetDate = combinedData[i].date
+            var results: [DailyDose] = []
+            
+            for dayData in hkDailyData {
+                let targetDate = dayData.date
+                var totalDose = dayData.value
+                
+                var totalWeightedDB = dayData.avgDB * 3600
+                var totalSeconds: Double = 3600
+
                 if let manualForDay = manualByDay[targetDate] {
-                    let manualDose = manualForDay.reduce(0.0) { total, session in
+                    for session in manualForDay {
                         let duration = session.endTime.timeIntervalSince(session.startTime)
-                        return total + sampleDosePercent(dB: session.volume, durationSeconds: duration)
+                        totalDose += sampleDosePercent(dB: session.volume, durationSeconds: duration)
+                        totalWeightedDB += (session.volume * duration)
+                        totalSeconds += duration
                     }
-                    combinedData[i] = DailyDose(
-                        date: combinedData[i].date,
-                        day: combinedData[i].day,
-                        value: combinedData[i].value + manualDose
-                    )
                 }
+
+                let finalAvgDB = totalSeconds > 0 ? (totalWeightedDB / totalSeconds) : 0
+
+                results.append(DailyDose(
+                    date: targetDate,
+                    day: dayData.day,
+                    value: totalDose,
+                    avgDB: finalAvgDB
+                ))
             }
 
-            dailyData = combinedData
+            self.dailyData = Array(results.suffix(7))
         } catch {
             print("History fetch error:", error)
         }

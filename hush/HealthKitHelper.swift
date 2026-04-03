@@ -64,8 +64,6 @@ class HearingHealthManager {
         let endDate = Date()
         let startDate = calendar.date(byAdding: .day, value: -pastDays, to: endDate)!
 
-        print("[HK] fetchDailyAverages: \(startDate) → \(endDate)")
-
         let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: .strictStartDate)
         let sort = NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)
 
@@ -78,7 +76,6 @@ class HearingHealthManager {
             store.execute(query)
         }
 
-        print("[HK] Raw samples fetched: \(samples.count)")
         for s in samples {
             let dB = s.quantity.doubleValue(for: HKUnit.decibelAWeightedSoundPressureLevel())
             let dur = s.endDate.timeIntervalSince(s.startDate)
@@ -91,8 +88,6 @@ class HearingHealthManager {
             byDay[day, default: []].append(sample)
         }
 
-        print("[HK] Days with data: \(byDay.keys.count)")
-
         var result: [DailyDose] = []
         for offset in (0..<pastDays).reversed() {
             guard let day = calendar.date(byAdding: .day, value: -offset, to: calendar.startOfDay(for: endDate)) else { continue }
@@ -100,10 +95,11 @@ class HearingHealthManager {
             let dayName = calendar.shortWeekdaySymbols[calendar.component(.weekday, from: day) - 1]
 
             let dose = totalDosePercent(samples: daySamples)
-            result.append(DailyDose(date: day, day: dayName, value: dose))
+            let avg = averageDB(samples: daySamples)
+            
+            result.append(DailyDose(date: day, day: dayName, value: dose, avgDB: avg))
         }
 
-        print("[HK] Final dailyData count: \(result.count)")
         return result
     }
 }

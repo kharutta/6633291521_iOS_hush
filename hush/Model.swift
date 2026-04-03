@@ -5,6 +5,7 @@ struct DailyDose: Identifiable {
     let date: Date
     let day: String
     let value: Double
+    let avgDB: Double
 
     var color: Color {
         if value > 85 { return .red }
