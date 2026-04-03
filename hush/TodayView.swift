@@ -37,9 +37,14 @@ struct TodayView: View {
     private var safeUntilText: String {
         guard avgDB > 0 else { return "—" }
         let date = safeUntil(currentDose: totalDose, avgDB: avgDB)
+        let calendar = Calendar.current
         let formatter = DateFormatter()
         formatter.locale = Locale(identifier: "en_US_POSIX")
         formatter.dateFormat = "h a"
+        
+        if calendar.component(.hour, from: date) == 23 && calendar.component(.minute, from: date) > 50 {
+            return "12 AM"
+        }
         return formatter.string(from: date)
     }
 

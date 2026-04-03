@@ -136,7 +136,12 @@ func averageDB(samples: [HKQuantitySample]) -> Double {
 func safeUntil(currentDose: Double, avgDB: Double) -> Date {
     let remainingDose = max(0, 100 - currentDose)
     let remainingHours = (remainingDose / 100) * allowedHours(dB: avgDB)
-    return Date().addingTimeInterval(remainingHours * 3600)
+    let calculatedDate = Date().addingTimeInterval(remainingHours * 3600)
+        
+    let calendar = Calendar.current
+    let endOfToday = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: Date()) ?? calculatedDate
+        
+    return min(calculatedDate, endOfToday)
 }
 
 func decibelToDosePercent(dB: Double, hours: Double) -> Double {
