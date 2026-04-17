@@ -115,7 +115,7 @@ struct HistoryView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Past 7 days").font(.headline)
+                Text("Past 7 Days").font(.headline)
 
                 VStack(alignment: .leading) {
                     if isLoading {

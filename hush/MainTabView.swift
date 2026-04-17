@@ -9,9 +9,9 @@ struct MainTabView: View {
                 .tabItem { Label("history", systemImage: "chart.bar.fill") }
                 .tag(0)
 
-//            HealthView()
-//                .tabItem { Label("health", systemImage: "heart.fill") }
-//                .tag(1)
+            HealthView()
+                .tabItem { Label("health", systemImage: "heart.fill") }
+                .tag(1)
 
             TodayView()
                 .tabItem { Label("today", systemImage: "ear.badge.waveform") }
@@ -21,9 +21,9 @@ struct MainTabView: View {
                 .tabItem { Label("log", systemImage: "plus.circle.fill") }
                 .tag(3)
 
-//            TestView()
-//                .tabItem { Label("test", systemImage: "heart.text.clipboard.fill") }
-//                .tag(4)
+            TestView()
+                .tabItem { Label("test", systemImage: "heart.text.clipboard.fill") }
+                .tag(4)
         }
         .accentColor(.blue)
         .preferredColorScheme(.dark)

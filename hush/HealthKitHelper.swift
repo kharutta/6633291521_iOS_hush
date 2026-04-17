@@ -1,4 +1,5 @@
 import HealthKit
+import Observation
 
 @MainActor
 @Observable
@@ -28,16 +29,9 @@ class HearingHealthManager {
     func loadToday() async {
         do {
             let fetched = try await fetchTodaySessions()
-            print("[HK] Today sessions count: \(fetched.count)")
-            for s in fetched {
-                let dB = s.quantity.doubleValue(for: HKUnit.decibelAWeightedSoundPressureLevel())
-                let dur = s.endDate.timeIntervalSince(s.startDate)
-                print("[HK]   \(s.startDate) → \(s.endDate) | \(Int(dB)) dB | \(Int(dur))s | source: \(s.sourceRevision.source.name)")
-            }
             self.sessions = fetched
             self.totalDose = totalDosePercent(samples: fetched)
             self.avgDB = averageDB(samples: fetched)
-            print("[HK] totalDose=\(totalDose) avgDB=\(avgDB)")
         } catch {
             print("[HK] loadToday error: \(error)")
         }

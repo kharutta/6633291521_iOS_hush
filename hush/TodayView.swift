@@ -57,7 +57,7 @@ struct TodayView: View {
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Text("Today's dose").font(.headline)
+                Text("Today's Dose").font(.headline)
 
                 HStack {
                     Spacer()

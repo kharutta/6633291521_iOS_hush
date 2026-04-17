@@ -1,4 +1,5 @@
 import SwiftUI
+import HealthKit
 
 struct DailyDose: Identifiable {
     let id = UUID()
@@ -58,6 +59,3 @@ struct UnifiedSession: Identifiable {
         self.isManual = true
     }
 }
-
-import HealthKit
-

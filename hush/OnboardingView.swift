@@ -2,10 +2,11 @@ import SwiftUI
 
 struct OnboardingView: View {
     @Binding var hasCompletedOnboarding: Bool
-    @State private var yearsWearing: Int = 5
-    @State private var hoursPerDay: Int = 3
-    @State private var volumeLevel: String = "Medium"
-
+        
+    @AppStorage("yearsWearing") private var yearsWearing: Int = 5
+    @AppStorage("hoursPerDay") private var hoursPerDay: Int = 3
+    @AppStorage("volumeLevel") private var volumeLevel: String = "Medium"
+    @AppStorage("birthDate") private var birthDate: Double = (Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()).timeIntervalSince1970
     private let volumeOptions = ["Low", "Medium", "High"]
 
     var body: some View {
@@ -16,7 +17,28 @@ struct OnboardingView: View {
                 .bold()
 
             VStack(alignment: .leading) {
-                Text("How many years have you been wearing earphones?")
+                Text("What is your date of birth?")
+                    .foregroundColor(.gray)
+                
+                DatePicker(
+                    "",
+                    selection: Binding(
+                        get: { Date(timeIntervalSince1970: birthDate) },
+                        set: { birthDate = $0.timeIntervalSince1970 }
+                        ),
+                    in: ...Date(),
+                    displayedComponents: .date
+                )
+                    .datePickerStyle(.wheel)
+                    .labelsHidden()
+                    .colorScheme(.dark)
+                    .frame(maxWidth: .infinity)
+                    .background(Color.white.opacity(0.1))
+                    .cornerRadius(12)
+            }
+            
+            VStack(alignment: .leading) {
+                Text("How long have you worn earphones?")
                     .foregroundColor(.gray)
 
                 HStack {
