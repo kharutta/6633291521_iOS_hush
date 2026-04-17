@@ -32,13 +32,27 @@ class HealthViewModel {
         guard let last = lastSessionDate else { return 999 }
         return Date().timeIntervalSince(last) / 3600
     }
-
+    
+    var todayDosePercent: Double {
+        let hkDose = totalDosePercent(samples: hk.sessions)
+        let startOfDay = Calendar.current.startOfDay(for: Date())
+        let manualDose = manualSessions
+            .filter { $0.startTime >= startOfDay }
+            .reduce(0.0) { $0 + sampleDosePercent(dB: $1.volume, durationSeconds: $1.endTime.timeIntervalSince($1.startTime)) }
+        return hkDose + manualDose
+    }
+    
     var recoveryPercent: Double {
-        ttsRecoveryPercent(hoursSinceLastSession: hoursSinceLastSession)
+        ttsRecoveryPercent(
+            hoursSinceLastSession: hoursSinceLastSession,
+            todayDosePercent: todayDosePercent)
     }
 
     var hoursToFullRecovery: Double {
-        hoursUntilFullyRecovered(currentRecoveryPercent: recoveryPercent)
+        hoursUntilFullyRecovered(
+            hoursSinceLastSession: hoursSinceLastSession,
+            todayDosePercent: todayDosePercent
+        )
     }
 
     var isFullyRecovered: Bool { recoveryPercent >= 95 }
