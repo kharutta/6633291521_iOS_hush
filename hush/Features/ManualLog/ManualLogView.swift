@@ -3,23 +3,7 @@ import SwiftData
 
 struct ManualLogView: View {
     @Environment(\.modelContext) private var modelContext
-    @State private var selectedDevice: String = "AirPods Pro"
-    @State private var startTime: Date = Date()
-    @State private var endTime: Date = Date().addingTimeInterval(60 * 60)
-    @State private var volume: Double = 70 // dB
-    @State private var selectedActivity: String = "music"
-    @State private var showSuccess: Bool = false
-
-    private let devices = ["AirPods Pro", "AirPods Max", "EarPods", "Headphone", "Speakers", "Other"]
-    private let activities = ["music", "podcast", "call", "video", "gaming", "work", "Other"]
-
-    private var durationMinutes: Int {
-        max(0, Int(endTime.timeIntervalSince(startTime) / 60))
-    }
-
-    private var volumeDisplay: String {
-        "~\(Int(volume)) dB"
-    }
+    @State private var viewModel = ManualLogViewModel()
 
     var body: some View {
         NavigationStack {
@@ -35,14 +19,14 @@ struct ManualLogView: View {
                             .font(.caption)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
-                                ForEach(devices, id: \.self) { device in
+                                ForEach(viewModel.devices, id: \.self) { device in
                                     CapsuleButton(
                                         title: device,
-                                        isSelected: selectedDevice == device
+                                        isSelected: viewModel.selectedDevice == device
                                     )
                                     .onTapGesture {
                                         withAnimation(.easeInOut(duration: 0.2)) {
-                                            selectedDevice = device
+                                            viewModel.selectedDevice = device
                                         }
                                     }
                                 }
@@ -59,7 +43,7 @@ struct ManualLogView: View {
                                 Text("start")
                                     .font(.caption)
                                     .foregroundColor(.gray)
-                                DatePicker("", selection: $startTime, displayedComponents: .hourAndMinute)
+                                DatePicker("", selection: $viewModel.startTime, displayedComponents: .hourAndMinute)
                                     .labelsHidden()
                                     .accentColor(.mint)
                             }
@@ -72,7 +56,7 @@ struct ManualLogView: View {
                                 Text("end")
                                     .font(.caption)
                                     .foregroundColor(.gray)
-                                DatePicker("", selection: $endTime, displayedComponents: .hourAndMinute)
+                                DatePicker("", selection: $viewModel.endTime, displayedComponents: .hourAndMinute)
                                     .labelsHidden()
                                     .accentColor(.mint)
                             }
@@ -89,12 +73,12 @@ struct ManualLogView: View {
                                 .foregroundColor(.gray)
                                 .font(.caption)
                             Spacer()
-                            Text(volumeDisplay)
+                            Text(viewModel.volumeDisplay)
                                 .bold()
-                                .foregroundColor(volumeColor)
+                                .foregroundColor(viewModel.volumeColor)
                         }
-                        Slider(value: $volume, in: 40...120, step: 1)
-                            .accentColor(volumeColor)
+                        Slider(value: $viewModel.volume, in: 40...120, step: 1)
+                            .accentColor(viewModel.volumeColor)
                         HStack {
                             Text("40 dB")
                                 .font(.caption2)
@@ -115,14 +99,14 @@ struct ManualLogView: View {
                             .font(.caption)
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack(spacing: 8) {
-                                ForEach(activities, id: \.self) { activity in
+                                ForEach(viewModel.activities, id: \.self) { activity in
                                     CapsuleButton(
                                         title: activity,
-                                        isSelected: selectedActivity == activity
+                                        isSelected: viewModel.selectedActivity == activity
                                     )
                                     .onTapGesture {
                                         withAnimation(.easeInOut(duration: 0.2)) {
-                                            selectedActivity = activity
+                                            viewModel.selectedActivity = activity
                                         }
                                     }
                                 }
@@ -136,30 +120,30 @@ struct ManualLogView: View {
                             .font(.caption)
 
                         HStack {
-                            Image(systemName: deviceIcon)
+                            Image(systemName: viewModel.deviceIcon)
                                 .foregroundColor(.mint)
-                            Text(selectedDevice)
+                            Text(viewModel.selectedDevice)
                             Spacer()
-                            Text("\(durationMinutes) min")
+                            Text("\(viewModel.durationMinutes) min")
                                 .bold()
                         }
 
                         HStack {
-                            Image(systemName: activityIcon)
+                            Image(systemName: viewModel.activityIcon)
                                 .foregroundColor(.mint)
-                            Text(selectedActivity.capitalized)
+                            Text(viewModel.selectedActivity.capitalized)
                             Spacer()
-                            Text(volumeDisplay)
+                            Text(viewModel.volumeDisplay)
                                 .bold()
-                                .foregroundColor(volumeColor)
+                                .foregroundColor(viewModel.volumeColor)
                         }
                     }
                     .padding()
                     .background(Color.white.opacity(0.1))
                     .cornerRadius(12)
-                    
-                    VStack{
-                        if showSuccess {
+
+                    VStack {
+                        if viewModel.showSuccess {
                             HStack {
                                 Image(systemName: "checkmark.circle.fill")
                                     .foregroundColor(.mint)
@@ -169,9 +153,8 @@ struct ManualLogView: View {
                             .frame(maxWidth: .infinity)
                             .padding()
                             .cornerRadius(12)
-                        }
-                        else {
-                            Button(action: addSession) {
+                        } else {
+                            Button(action: { viewModel.addSession(to: modelContext) }) {
                                 Text("add session")
                                     .font(.headline)
                                     .frame(maxWidth: .infinity)
@@ -189,73 +172,7 @@ struct ManualLogView: View {
             .navigationBarTitleDisplayMode(.inline)
         }
         .onAppear {
-            selectedDevice = "AirPods Pro"
-            selectedActivity = "music"
-            startTime = Date()
-            endTime = Date().addingTimeInterval(60 * 60)
-            volume = 70
-            showSuccess = false
-        }
-    }
-
-    private var volumeColor: Color {
-        switch volume {
-        case ..<70: return .green
-        case 70..<85: return .yellow
-        case 85..<100: return .orange
-        default: return .red
-        }
-    }
-
-    private var deviceIcon: String {
-        switch selectedDevice {
-        case "AirPods Pro": return "airpods.pro"
-        case "AirPods Max": return "beats.headphones"
-        case "EarPods": return "earpods"
-        case "Headphone": return "headphones"
-        case "Speakers": return "speaker.wave.2"
-        default: return "questionmark.circle"
-        }
-    }
-
-    private var activityIcon: String {
-        switch selectedActivity {
-        case "music": return "music.note"
-        case "podcast": return "mic"
-        case "call": return "phone"
-        case "video": return "play.rectangle"
-        case "gaming": return "gamecontroller"
-        case "work": return "briefcase"
-        default: return "star"
-        }
-    }
-
-    private func addSession() {
-        guard durationMinutes > 0 else { return }
-
-        let session = ManualSession(
-            device: selectedDevice,
-            startTime: startTime,
-            endTime: endTime,
-            volume: volume,
-            activity: selectedActivity
-        )
-
-        modelContext.insert(session)
-
-        withAnimation {
-            showSuccess = true
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation {
-                showSuccess = false
-                selectedDevice = "AirPods Pro"
-                selectedActivity = "music"
-                startTime = Date()
-                endTime = Date().addingTimeInterval(60 * 60)
-                volume = 70
-            }
+            viewModel.resetForm()
         }
     }
 }

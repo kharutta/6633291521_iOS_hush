@@ -31,8 +31,10 @@ struct OnboardingView: View {
                 )
                     .datePickerStyle(.wheel)
                     .labelsHidden()
+                    .scaleEffect(0.8)
                     .colorScheme(.dark)
-                    .frame(maxWidth: .infinity)
+                    .frame(maxWidth: .infinity, maxHeight: 80)
+                    .clipped()
                     .background(Color.white.opacity(0.1))
                     .cornerRadius(12)
             }

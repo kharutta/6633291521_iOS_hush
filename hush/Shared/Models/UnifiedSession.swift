@@ -1,27 +1,6 @@
 import SwiftUI
 import HealthKit
 
-struct DailyDose: Identifiable {
-    let id = UUID()
-    let date: Date
-    let day: String
-    let value: Double
-    let avgDB: Double
-
-    var color: Color {
-        if value > 85 { return .red }
-        if value > 60 { return .orange }
-        return .mint
-    }
-}
-
-struct InsightData: Identifiable {
-    let id = UUID()
-    let color: Color
-    let title: String
-    let subtitle: String
-}
-
 struct UnifiedSession: Identifiable {
     let id: UUID
     let startDate: Date

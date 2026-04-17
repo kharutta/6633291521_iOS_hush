@@ -1,24 +1,24 @@
 import SwiftUI
-import SwiftData
-import Charts
 import HealthKit
 
-struct HistoryView: View {
-    @State private var hk = HearingHealthManager()
-    @Query private var manualSessions: [ManualSession]
-    @State private var dailyData: [DailyDose] = []
-    @State private var isLoading = true
+@MainActor
+@Observable
+class HistoryViewModel {
+    private var hk = HearingHealthManager()
+    private var manualSessions: [ManualSession] = []
+    var dailyData: [DailyDose] = []
+    var isLoading = true
 
-    private var weeklyAvg: Double {
+    var weeklyAvg: Double {
         guard !dailyData.isEmpty else { return 0 }
         return dailyData.map(\.value).reduce(0, +) / Double(dailyData.count)
     }
 
-    private var worstDay: DailyDose? {
+    var worstDay: DailyDose? {
         dailyData.max(by: { $0.value < $1.value })
     }
 
-    private var weekdayWeekendInsight: InsightData? {
+    var weekdayWeekendInsight: InsightData? {
         guard dailyData.count == 7 else { return nil }
 
         let calendar = Calendar.current
@@ -62,7 +62,7 @@ struct HistoryView: View {
         return nil
     }
 
-    private var trendInsight: InsightData? {
+    var trendInsight: InsightData? {
         guard dailyData.count == 7 else { return nil }
 
         let half = dailyData.count / 2
@@ -90,9 +90,9 @@ struct HistoryView: View {
         return nil
     }
 
-    private var volumeInsight: InsightData? {
+    var volumeInsight: InsightData? {
         guard weeklyAvg > 100 else { return nil }
-        
+
         let dBReduction = 3 * log2(weeklyAvg / 100)
         let doseReductionPercent = (weeklyAvg - 100) / weeklyAvg * 100
 
@@ -102,109 +102,33 @@ struct HistoryView: View {
             subtitle: String(format: "cuts weekly dose ~%.0f%%", doseReductionPercent)
         )
     }
-    
-    private var insights: [InsightData] {
+
+    var insights: [InsightData] {
         [weekdayWeekendInsight, trendInsight, volumeInsight].compactMap { $0 }
     }
-    
-    private var maxDB: Double {
+
+    var maxDB: Double {
         let maxValue = dailyData.map(\.avgDB).max() ?? 85
         return max(maxValue, 90)
     }
 
-    var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 20) {
-                Text("Past 7 Days").font(.headline)
-
-                VStack(alignment: .leading) {
-                    if isLoading {
-                        ProgressView()
-                            .frame(maxWidth: .infinity, minHeight: 120)
-                    } else if dailyData.isEmpty {
-                        Text("No data found")
-                            .font(.caption).foregroundColor(.gray)
-                            .frame(maxWidth: .infinity, minHeight: 120)
-                    } else {
-                        Chart {
-                            ForEach(dailyData) { item in
-                                BarMark(
-                                    x: .value("Day", item.date, unit: .day),
-                                    y: .value("Decibels", item.avgDB),
-                                    width: .fixed(35)
-                                )
-                                .foregroundStyle(item.color)
-                                .cornerRadius(4)
-                                .annotation(position: .top, spacing: 8) {
-                                    if item.avgDB > 0 {
-                                        Text(String(format: "%.0f", item.avgDB))
-                                            .font(.system(size: 10, weight: .bold))
-                                            .foregroundStyle(.gray)
-                                    }
-                                }
-                            }
-                            
-                            RuleMark(y: .value("Limit", 85))
-                                .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
-                                .foregroundStyle(.red.opacity(0.5))
-                        }
-                        .frame(height: 160)
-                        .padding(.top, 24)
-                        .chartYScale(domain: 0...max(100, maxDB + 10))
-                        .chartYAxis(.hidden)
-                        .chartXAxis {
-                            AxisMarks(values: .stride(by: .day)) { _ in
-                                AxisValueLabel(format: .dateTime.weekday(.abbreviated))
-                                    .font(.system(size: 12))
-                                    .foregroundStyle(.gray)
-                            }
-                        }
-                    }
-                }
-                .padding()
-                .background(Color.white.opacity(0.1))
-                .cornerRadius(12)
-
-                HStack {
-                    StatBox(
-                        label: "weekly avg",
-                        value: dailyData.isEmpty ? "—" : "\(String(format: "%.1f%", weeklyAvg))%",
-                        valueColor: weeklyAvg > 60 ? .red : weeklyAvg > 40 ? .orange : .mint
-                    )
-                    if let worst = worstDay {
-                        StatBox(
-                            label: "worst day",
-                            value: "\(worst.day) \(String(format: "%.1f%", worst.value))%",
-                            valueColor: .red
-                        )
-                    } else {
-                        StatBox(label: "worst day", value: "—", valueColor: .gray)
-                    }
-                }
-
-                if !insights.isEmpty {
-                    Text("Insights").font(.headline)
-                    ForEach(insights) { insight in
-                        InsightRow(color: insight.color, title: insight.title, subtitle: insight.subtitle)
-                    }
-                }
-            }
-            .padding()
-        }
-        .task {
-            try? await hk.requestAuthorization()
-            await loadCombinedData()
-        }
+    func updateManualSessions(_ sessions: [ManualSession]) {
+        manualSessions = sessions
     }
 
-    private func loadCombinedData() async {
+    func initialize() async {
+        try? await hk.requestAuthorization()
+        await loadCombinedData()
+    }
+
+    func loadCombinedData() async {
         do {
             let calendar = Calendar.current
             let today = Date()
             let startOfThisWeek = calendar.dateInterval(of: .weekOfYear, for: today)!.start
             let startOfLastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: startOfThisWeek)!
             let daysSinceLastWeekStart = calendar.dateComponents([.day], from: startOfLastWeek, to: today).day! + 1
-            
+
             let hkDailyData = try await hk.fetchDailyAverages(pastDays: daysSinceLastWeekStart)
 
             var manualByDay: [Date: [ManualSession]] = [:]
@@ -215,11 +139,11 @@ struct HistoryView: View {
             }
 
             var results: [DailyDose] = []
-            
+
             for dayData in hkDailyData {
                 let targetDate = dayData.date
                 var totalDose = dayData.value
-                
+
                 var totalWeightedDB = dayData.avgDB * 3600
                 var totalSeconds: Double = 3600
 
