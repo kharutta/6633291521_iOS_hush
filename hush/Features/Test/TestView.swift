@@ -3,7 +3,7 @@ import Combine
 
 struct TestView: View {
     @State private var testManager = HearingTestManager()
-    @State private var testFrequencies = [500, 1000, 2000, 4000, 8000]
+    @State private var testFrequencies = [500, 1000, 2000, 4000]
     @State private var currentIndex = 0
     @State private var dbLevel: Float = 0.01
 

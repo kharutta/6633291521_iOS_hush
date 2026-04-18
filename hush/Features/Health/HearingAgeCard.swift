@@ -61,14 +61,9 @@ struct HearingAgeCard: View {
                 .font(.caption)
                 .foregroundColor(.gray)
                 .fixedSize(horizontal: false, vertical: true)
-
-            Text("Based on your listening history + HealthKit data using ISO 1999 — not a medical diagnosis")
-                .font(.caption2)
-                .foregroundColor(Color.gray.opacity(0.6))
-                .fixedSize(horizontal: false, vertical: true)
         }
         .padding()
-        .background(Color.white.opacity(0.07))
+        .background(Color.white.opacity(0.1))
         .cornerRadius(12)
     }
 }

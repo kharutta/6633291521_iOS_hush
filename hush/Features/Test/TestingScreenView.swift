@@ -13,7 +13,7 @@ struct TestingScreenView: View {
                     .font(.system(size: 60, weight: .bold, design: .monospaced))
                     .foregroundColor(.white)
 
-                Text("\(String(format: "%.2f", decibels)) dB")
+                Text("\(String(format: "%.0f", decibels * 100)) dB HL")
                     .font(.system(size: 30, weight: .bold, design: .monospaced))
                     .foregroundColor(.white)
             }

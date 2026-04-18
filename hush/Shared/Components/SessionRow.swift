@@ -18,7 +18,7 @@ struct SessionRow: View {
             Text(percent).font(.body).bold()
         }
         .padding()
-        .background(Color.white.opacity(0.05))
+        .background(Color.white.opacity(0.1))
         .cornerRadius(12)
     }
 }

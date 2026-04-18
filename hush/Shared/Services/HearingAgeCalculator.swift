@@ -35,23 +35,20 @@ func estimateHearingAge(
 }
 
 func ttsRecoveryPercent(hoursSinceLastSession: Double, todayDosePercent: Double) -> Double {
-    let ttsHalfLife: Double = 16.0
-    let ttsThreshold: Double = 0.05
+    let recoveryConstant: Double = 16.0
+    let totalHoursNeeded = (todayDosePercent / 100.0) * recoveryConstant
     
-    let severity = todayDosePercent / 100.0
-    guard severity > ttsThreshold else { return 100.0 }
-    guard hoursSinceLastSession >= 0 else { return 0 }
-    let remaining = severity * pow(0.5, hoursSinceLastSession / ttsHalfLife)
-    let pct = (1.0 - remaining / severity) * 100.0
-    return min(100.0, max(0.0, pct))
+    guard totalHoursNeeded > 0 else { return 100.0 }
+    let recoveryProgress = (hoursSinceLastSession / totalHoursNeeded) * 100.0
+    
+    return min(100.0, max(0.0, recoveryProgress))
 }
 
 func hoursUntilFullyRecovered(hoursSinceLastSession: Double, todayDosePercent: Double) -> Double {
-    let ttsHalfLife: Double = 16.0
-    let ttsThreshold: Double = 0.05
+    let recoveryConstant: Double = 16.0
+    let totalHoursNeeded = (todayDosePercent / 100.0) * recoveryConstant
     
-    let severity = todayDosePercent / 100.0
-    guard severity > ttsThreshold else { return 0 }
-    let totalHoursNeeded = ttsHalfLife * log2(severity / ttsThreshold)
-    return max(0, totalHoursNeeded - hoursSinceLastSession)
+    let remainingTime = totalHoursNeeded - hoursSinceLastSession
+    
+    return max(0, remainingTime)
 }

@@ -14,16 +14,16 @@ struct ResultSummaryView: View {
     private func interpretPTA(_ avg: Float) -> (status: String, info: String, color: Color) {
         switch avg {
         case ..<16:
-            return ("Excellent (Normal)", "You can hear faint whispers and rustling leaves clearly.", .mint)
-        case 16...25:
+            return ("Excellent (Normal)", "You can hear whispers and rustling leaves clearly.", .mint)
+        case 16..<26:
             return ("Slightly Impaired", "You may have slight difficulty in very noisy environments.", .green)
-        case 26...40:
+        case 26..<41:
             return ("Mild Loss", "Quiet speech or distant sounds may be hard to hear.", .orange)
-        case 41...55:
+        case 41..<56:
             return ("Moderate Loss", "Normal conversation is difficult. people may need to speak louder.", .red)
-        case 56...70:
+        case 56..<71:
             return ("Moderately-Severe Loss", "Challenges with most everyday speech.", .red)
-        case 71...90:
+        case 71..<91:
             return ("Severe Loss", "Only very loud sounds are audible.", .purple)
         default:
             return ("Profound Loss", "Minimal or no usable hearing.", .purple)
@@ -38,7 +38,6 @@ struct ResultSummaryView: View {
                 Text("Test Results")
                     .font(.title2.bold())
                     .foregroundColor(.white)
-                    .padding(.top, 40)
 
                 VStack(spacing: 15) {
                     Text("Pure Tone Average (PTA)")
@@ -106,16 +105,9 @@ struct ResultSummaryView: View {
                         .background(Color.mint)
                         .cornerRadius(12)
                 }
-                .padding(.horizontal)
-                .padding(.top, 10)
-
-                Text("Note: This test is a preliminary assessment and cannot replace a professional medical diagnosis.")
-                    .font(.caption2)
-                    .foregroundColor(.gray.opacity(0.6))
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 40)
-                    .padding(.bottom, 30)
+                .padding(.bottom, 8)
             }
+            .padding()
         }
     }
 }
