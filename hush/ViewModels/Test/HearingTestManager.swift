@@ -33,7 +33,7 @@ class HearingTestManager {
         for frame in 0..<Int(frameCount) {
             let val = sinf(Float(2.0 * .pi * frequency * Double(frame) / sampleRate))
             for channel in 0..<channels {
-                buffer.floatChannelData?[channel][frame] = val * volume * 0.5
+                buffer.floatChannelData?[channel][frame] = val * volume * 0.01
             }
         }
 
