@@ -5,33 +5,33 @@ struct ResultSummaryView: View {
     let frequencies: [Int]
     var onReset: () -> Void
 
-    private var averageDB: Float {
+    private var averageIndex: Float {
         let coreFreqs = [500, 1000, 2000, 4000]
         let sum = coreFreqs.reduce(0) { $0 + (results[$1] ?? 0) }
         return (sum / Float(coreFreqs.count)) * 100
     }
 
-    private func interpretPTA(_ avg: Float) -> (status: String, info: String, color: Color) {
+    private func interpretIndex(_ avg: Float) -> (status: String, info: String, color: Color) {
         switch avg {
         case ..<16:
-            return ("Excellent (Normal)", "You can hear whispers and rustling leaves clearly.", .mint)
+            return ("Excellent (Normal)", "You can hear soft sounds easily in this test setup.", .mint)
         case 16..<26:
-            return ("Slightly Impaired", "You may have slight difficulty in very noisy environments.", .green)
+            return ("Slightly Reduced", "You may miss very quiet sounds in some situations.", .green)
         case 26..<41:
-            return ("Mild Loss", "Quiet speech or distant sounds may be hard to hear.", .orange)
+            return ("Mild Reduction", "Soft speech or distant sounds may be hard to hear.", .orange)
         case 41..<56:
-            return ("Moderate Loss", "Normal conversation is difficult. people may need to speak louder.", .red)
+            return ("Moderate Reduction", "Conversational speech may sound faint.", .red)
         case 56..<71:
-            return ("Moderately-Severe Loss", "Challenges with most everyday speech.", .red)
+            return ("Moderately-Severe", "You might struggle with most everyday sounds.", .red)
         case 71..<91:
-            return ("Severe Loss", "Only very loud sounds are audible.", .purple)
+            return ("Severe", "Only loud tones in this test are easily heard.", .purple)
         default:
-            return ("Profound Loss", "Minimal or no usable hearing.", .purple)
+            return ("Profound", "Almost all tones in this test are difficult to hear.", .purple)
         }
     }
 
     var body: some View {
-        let interpretation = interpretPTA(averageDB)
+        let interpretation = interpretIndex(averageIndex)
 
         ScrollView {
             VStack(spacing: 25) {
@@ -39,12 +39,18 @@ struct ResultSummaryView: View {
                     .font(.title2.bold())
                     .foregroundColor(.white)
 
+                Text("Results are relative and may vary depending on your device, headphones, and environment.")
+                    .font(.footnote)
+                    .foregroundColor(.mint)
+                    .multilineTextAlignment(.center)
+                    .padding(.bottom, 8)
+
                 VStack(spacing: 15) {
-                    Text("Pure Tone Average (PTA)")
+                    Text("Average Hearing Index")
                         .font(.subheadline)
                         .foregroundColor(.gray)
 
-                    Text("\(String(format: "%.1f", averageDB)) dB HL")
+                    Text("\(String(format: "%.1f", averageIndex))")
                         .font(.system(size: 48, weight: .bold, design: .rounded))
                         .foregroundColor(interpretation.color)
 
@@ -66,10 +72,6 @@ struct ResultSummaryView: View {
                 .frame(maxWidth: .infinity)
                 .background(Color.white.opacity(0.05))
                 .cornerRadius(20)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(interpretation.color.opacity(0.3), lineWidth: 1)
-                )
                 .padding(.horizontal)
 
                 VStack(alignment: .leading, spacing: 15) {
@@ -85,7 +87,7 @@ struct ResultSummaryView: View {
                                 .font(.system(.body, design: .monospaced))
                                 .foregroundColor(.white)
                             Spacer()
-                            Text("\(String(format: "%.1f", val)) dB")
+                            Text("\(String(format: "%.1f", val))")
                                 .bold()
                                 .foregroundColor(val > 25 ? .orange : .mint)
                         }
