@@ -31,7 +31,7 @@ struct TodayView: View {
                             .contentTransition(.numericText())
 
                         if viewModel.totalDose >= 100 {
-                            Text("⚠️ daily limit reached")
+                            Text("daily limit reached")
                                 .font(.caption).foregroundColor(.red)
                         } else {
                             Text("\(Int(viewModel.headroom))% headroom left")

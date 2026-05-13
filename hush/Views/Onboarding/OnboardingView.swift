@@ -135,7 +135,7 @@ struct OnboardingView: View {
             Spacer()
 
             Button(action: { hasCompletedOnboarding = true }) {
-                Text("Next →")
+                Text("Next")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding()
