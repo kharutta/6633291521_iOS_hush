@@ -5,8 +5,6 @@ import Observation
 @Observable
 class HearingHealthManager {
     var sessions: [HKQuantitySample] = []
-    var totalDose: Double = 0
-    var avgDB: Double = 0
 
     private let store = HKHealthStore()
 
@@ -29,8 +27,6 @@ class HearingHealthManager {
         do {
             let fetched = try await fetchTodaySessions()
             self.sessions = fetched
-            self.totalDose = totalDosePercent(samples: fetched)
-            self.avgDB = averageDB(samples: fetched)
         } catch {
             print("[HK] loadToday error: \(error)")
         }
@@ -89,8 +85,9 @@ class HearingHealthManager {
 
             let dose = totalDosePercent(samples: daySamples)
             let avg = averageDB(samples: daySamples)
+            let totalSecs = daySamples.reduce(0.0) { $0 + $1.endDate.timeIntervalSince($1.startDate) }
 
-            result.append(DailyDose(date: day, day: dayName, value: dose, avgDB: avg))
+            result.append(DailyDose(date: day, day: dayName, value: dose, avgDB: avg, totalSeconds: totalSecs))
         }
 
         return result

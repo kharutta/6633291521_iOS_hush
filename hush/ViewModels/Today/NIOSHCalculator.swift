@@ -20,7 +20,15 @@ func totalDosePercent(samples: [HKQuantitySample]) -> Double {
 func averageDB(samples: [HKQuantitySample]) -> Double {
     guard !samples.isEmpty else { return 0 }
     let unit = HKUnit.decibelAWeightedSoundPressureLevel()
-    return samples.map { $0.quantity.doubleValue(for: unit) }.reduce(0, +) / Double(samples.count)
+    var totalWeightedDB: Double = 0
+    var totalSeconds: Double = 0
+    for sample in samples {
+        let db = sample.quantity.doubleValue(for: unit)
+        let duration = sample.endDate.timeIntervalSince(sample.startDate)
+        totalWeightedDB += db * duration
+        totalSeconds += duration
+    }
+    return totalSeconds > 0 ? totalWeightedDB / totalSeconds : 0
 }
 
 func safeUntil(currentDose: Double, avgDB: Double) -> Date {
@@ -29,11 +37,7 @@ func safeUntil(currentDose: Double, avgDB: Double) -> Date {
     let calculatedDate = Date().addingTimeInterval(remainingHours * 3600)
 
     let calendar = Calendar.current
-    let endOfToday = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: Date()) ?? calculatedDate
+    let endOfToday = calendar.date(bySettingHour: 23, minute: 59, second: 59, of: Date())!
 
     return min(calculatedDate, endOfToday)
-}
-
-func decibelToDosePercent(dB: Double, hours: Double) -> Double {
-    return (hours / allowedHours(dB: dB)) * 100
 }

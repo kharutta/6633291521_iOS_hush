@@ -7,6 +7,7 @@ class HistoryViewModel {
     private var hk = HearingHealthManager()
     private var manualSessions: [ManualSession] = []
     var dailyData: [DailyDose] = []
+    var lastWeekData: [DailyDose] = []
     var isLoading = true
 
     var weeklyAvg: Double {
@@ -63,28 +64,24 @@ class HistoryViewModel {
     }
 
     var trendInsight: InsightData? {
-        guard dailyData.count == 7 else { return nil }
+        guard dailyData.count >= 3, lastWeekData.count >= 3 else { return nil }
 
-        let half = dailyData.count / 2
-        let olderDays = Array(dailyData.prefix(half))
-        let newerDays = Array(dailyData.suffix(half))
+        let thisWeekAvg = dailyData.map(\.value).reduce(0, +) / Double(dailyData.count)
+        let lastWeekAvg = lastWeekData.map(\.value).reduce(0, +) / Double(lastWeekData.count)
 
-        let olderAvg = olderDays.map(\.value).reduce(0, +) / Double(half)
-        let newerAvg = newerDays.map(\.value).reduce(0, +) / Double(half)
+        guard thisWeekAvg > 0 || lastWeekAvg > 0 else { return nil }
 
-        guard olderAvg > 0 || newerAvg > 0 else { return nil }
-
-        if newerAvg < olderAvg * 0.85 && olderAvg > 0 {
+        if thisWeekAvg < lastWeekAvg * 0.85 && lastWeekAvg > 0 {
             return InsightData(
                 color: .teal,
-                title: "improving vs earlier this week",
-                subtitle: String(format: "avg %.0f%% → %.0f%%", olderAvg, newerAvg)
+                title: "improving vs last week",
+                subtitle: String(format: "avg %.1f%% → %.1f%%", lastWeekAvg, thisWeekAvg)
             )
-        } else if newerAvg > olderAvg * 1.15 {
+        } else if thisWeekAvg > lastWeekAvg * 1.15 {
             return InsightData(
                 color: .teal,
-                title: "getting worse vs earlier this week",
-                subtitle: String(format: "avg %.0f%% → %.0f%%", olderAvg, newerAvg)
+                title: "getting worse vs last week",
+                subtitle: String(format: "avg %.1f%% → %.1f%%", lastWeekAvg, thisWeekAvg)
             )
         }
         return nil
@@ -108,8 +105,8 @@ class HistoryViewModel {
     }
 
     var maxDB: Double {
-        let maxValue = dailyData.map(\.avgDB).max() ?? 85
-        return max(maxValue, 90)
+        let maxValue = dailyData.map(\.avgDB).max() ?? 0
+        return maxValue
     }
 
     func updateManualSessions(_ sessions: [ManualSession]) {
@@ -125,15 +122,14 @@ class HistoryViewModel {
         do {
             let calendar = Calendar.current
             let today = Date()
-            let startOfThisWeek = calendar.dateInterval(of: .weekOfYear, for: today)!.start
-            let startOfLastWeek = calendar.date(byAdding: .weekOfYear, value: -1, to: startOfThisWeek)!
-            let daysSinceLastWeekStart = calendar.dateComponents([.day], from: startOfLastWeek, to: today).day! + 1
 
-            let hkDailyData = try await hk.fetchDailyAverages(pastDays: daysSinceLastWeekStart)
+            let hkDailyData = try await hk.fetchDailyAverages(pastDays: 14)
+
+            let fourteenDaysAgo = calendar.date(byAdding: .day, value: -14, to: calendar.startOfDay(for: today))!
 
             var manualByDay: [Date: [ManualSession]] = [:]
             for session in manualSessions {
-                guard session.startTime >= startOfLastWeek else { continue }
+                guard session.startTime >= fourteenDaysAgo else { continue }
                 let day = calendar.startOfDay(for: session.startTime)
                 manualByDay[day, default: []].append(session)
             }
@@ -144,8 +140,8 @@ class HistoryViewModel {
                 let targetDate = dayData.date
                 var totalDose = dayData.value
 
-                var totalWeightedDB = dayData.avgDB * 3600
-                var totalSeconds: Double = 3600
+                var totalWeightedDB = dayData.avgDB * dayData.totalSeconds
+                var totalSeconds = dayData.totalSeconds
 
                 if let manualForDay = manualByDay[targetDate] {
                     for session in manualForDay {
@@ -162,10 +158,12 @@ class HistoryViewModel {
                     date: targetDate,
                     day: dayData.day,
                     value: totalDose,
-                    avgDB: finalAvgDB
+                    avgDB: finalAvgDB,
+                    totalSeconds: totalSeconds
                 ))
             }
 
+            self.lastWeekData = Array(results.dropLast(7).suffix(7))
             self.dailyData = Array(results.suffix(7))
         } catch {
             print("History fetch error:", error)

@@ -24,7 +24,13 @@ class TodayViewModel {
 
     var avgDB: Double {
         guard !unifiedSessions.isEmpty else { return 0 }
-        return unifiedSessions.map(\.dB).reduce(0, +) / Double(unifiedSessions.count)
+        var totalWeightedDB: Double = 0
+        var totalSeconds: Double = 0
+        for session in unifiedSessions {
+            totalWeightedDB += session.dB * session.durationSeconds
+            totalSeconds += session.durationSeconds
+        }
+        return totalSeconds > 0 ? totalWeightedDB / totalSeconds : 0
     }
 
     var dosePercent: Double { min(totalDose, 100) }
@@ -50,8 +56,9 @@ class TodayViewModel {
     }
 
     var ringColor: Color {
-        if dosePercent > 85 { return .red }
-        if dosePercent > 60 { return .orange }
+        if dosePercent >= 90 { return .red }
+        if dosePercent >= 70 { return .orange }
+        if dosePercent >= 50 { return .yellow }
         return .mint
     }
 

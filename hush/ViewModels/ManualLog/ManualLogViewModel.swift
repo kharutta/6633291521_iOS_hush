@@ -24,7 +24,7 @@ class ManualLogViewModel {
 
     var volumeColor: Color {
         switch volume {
-        case ..<70: return .green
+        case ..<70: return .mint
         case 70..<85: return .yellow
         case 85..<100: return .orange
         default: return .red
