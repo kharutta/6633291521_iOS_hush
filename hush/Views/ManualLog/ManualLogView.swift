@@ -35,9 +35,22 @@ struct ManualLogView: View {
                     }
 
                     VStack(alignment: .leading) {
-                        Text("duration")
-                            .foregroundColor(.gray)
-                            .font(.caption)
+                        HStack{
+                            Text("duration")
+                                .foregroundColor(.gray)
+                                .font(.caption)
+                            
+                            Spacer()
+                            
+                            if let error = viewModel.durationError {
+                                HStack(spacing: 4) {
+                                    Image(systemName: "exclamationmark.circle")
+                                    Text(error)
+                                }
+                                .font(.caption)
+                                .foregroundColor(.red)
+                            }
+                        }
                         HStack(spacing: 16) {
                             VStack(alignment: .leading) {
                                 Text("start")
@@ -159,10 +172,11 @@ struct ManualLogView: View {
                                     .font(.headline)
                                     .frame(maxWidth: .infinity)
                                     .padding()
-                                    .background(Color.mint)
-                                    .foregroundColor(.black)
+                                    .background(viewModel.durationError == nil ? Color.mint : Color.gray.opacity(0.3))
+                                    .foregroundColor(viewModel.durationError == nil ? .black : .gray)
                                     .cornerRadius(15)
                             }
+                            .disabled(viewModel.durationError != nil)
                             .padding(.bottom, 8)
                         }
                     }

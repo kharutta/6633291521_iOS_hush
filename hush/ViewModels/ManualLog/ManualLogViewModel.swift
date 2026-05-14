@@ -54,8 +54,18 @@ class ManualLogViewModel {
         }
     }
 
+    var durationError: String? {
+        if endTime <= startTime {
+            return "End time must be after start time"
+        }
+        if endTime > Date() {
+            return "End time cannot be in the future"
+        }
+        return nil
+    }
+
     func addSession(to context: ModelContext) {
-        guard durationMinutes > 0 else { return }
+        guard durationError == nil else { return }
 
         let session = ManualSession(
             device: selectedDevice,
@@ -81,8 +91,9 @@ class ManualLogViewModel {
     func resetForm() {
         selectedDevice = "AirPods Pro"
         selectedActivity = "music"
-        startTime = Date()
-        endTime = Date().addingTimeInterval(60 * 60)
+        let now = Date()
+        startTime = now.addingTimeInterval(-60 * 60)
+        endTime = now
         volume = 70
         showSuccess = false
     }

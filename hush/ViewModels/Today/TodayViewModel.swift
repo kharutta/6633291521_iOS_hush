@@ -64,7 +64,7 @@ class TodayViewModel {
 
     func sessionSubtitle(_ session: UnifiedSession) -> String {
         let fmt = DateFormatter()
-        fmt.dateFormat = "h:mm"
+        fmt.dateFormat = "h:mm a"
         let start = fmt.string(from: session.startDate)
         let end = fmt.string(from: session.endDate)
         let activityText = session.activity != nil ? " • \(session.activity!)" : ""

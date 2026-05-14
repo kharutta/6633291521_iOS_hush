@@ -93,6 +93,7 @@ struct TodayView: View {
             .padding()
         }
         .task {
+            viewModel.updateManualSessions(manualSessions)
             await viewModel.initialize()
         }
         .onChange(of: manualSessions) { _, newValue in
