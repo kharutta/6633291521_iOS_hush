@@ -9,8 +9,9 @@ struct DailyDose: Identifiable {
     var totalSeconds: Double = 0
 
     var color: Color {
-        if value > 85 { return .red }
-        if value > 60 { return .orange }
+        if value >= 90 { return .red }
+        if value >= 70 { return .orange }
+        if value >= 50 { return .yellow }
         return .mint
     }
 }
