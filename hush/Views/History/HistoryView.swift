@@ -38,7 +38,7 @@ struct HistoryView: View {
                                 }
                             }
 
-                            RuleMark(y: .value("Limit", 85))
+                            RuleMark(y: .value("Limit", 100))
                                 .lineStyle(StrokeStyle(lineWidth: 1, dash: [4]))
                                 .foregroundStyle(.red.opacity(0.5))
                         }
